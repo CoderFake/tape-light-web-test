@@ -1,0 +1,885 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Color Signal System Controller</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #121212;
+            color: #e0e0e0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .navbar {
+            background-color: #1e1e1e !important;
+        }
+        .card {
+            background-color: #1e1e1e;
+            border: 1px solid #333;
+            margin-bottom: 20px;
+        }
+        .card-header {
+            background-color: #2a2a2a;
+            border-bottom: 1px solid #333;
+        }
+        .led-display {
+            display: flex;
+            flex-wrap: nowrap;
+            overflow-x: auto;
+            height: 50px;
+            background-color: #0a0a0a;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        .led {
+            width: 10px;
+            height: 50px;
+            margin: 0 1px;
+            flex-shrink: 0;
+        }
+        .btn-dark {
+            background-color: #2a2a2a;
+            border-color: #333;
+        }
+        .btn-dark:hover {
+            background-color: #3a3a3a;
+        }
+        .form-control, .form-select {
+            background-color: #2a2a2a;
+            border-color: #333;
+            color: #e0e0e0;
+        }
+        .form-control:focus, .form-select:focus {
+            background-color: #2a2a2a;
+            border-color: #555;
+            color: #e0e0e0;
+        }
+        .connection-status {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 5px;
+        }
+        .connection-status.connected {
+            background-color: #28a745;
+        }
+        .connection-status.disconnected {
+            background-color: #dc3545;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#">Color Signal System Controller</a>
+            <div class="ms-auto d-flex align-items-center">
+                <span class="me-2">Trạng thái kết nối:</span>
+                <span class="connection-status disconnected" id="connectionIndicator"></span>
+                <span id="connectionStatus">Đang kết nối...</span>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <div class="row">
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5>LED Preview</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="led-display" id="ledDisplay">
+                            <!-- LEDs sẽ được tạo bởi JavaScript -->
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <button class="btn btn-dark" id="zoomOutBtn">
+                                <i class="bi bi-zoom-out"></i> Zoom Out
+                            </button>
+                            <button class="btn btn-dark" id="zoomInBtn">
+                                <i class="bi bi-zoom-in"></i> Zoom In
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5>Scene & Effect Control</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label for="sceneSelect" class="form-label">Scene:</label>
+                            <select class="form-select" id="sceneSelect">
+                                <option value="">Loading scenes...</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="effectSelect" class="form-label">Effect:</label>
+                            <select class="form-select" id="effectSelect">
+                                <option value="">Select a scene first</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="paletteSelect" class="form-label">Palette:</label>
+                            <select class="form-select" id="paletteSelect">
+                                <option value="">Select a scene first</option>
+                            </select>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <button class="btn btn-primary" id="changeEffectBtn">Change Effect</button>
+                            <button class="btn btn-success" id="changePaletteBtn">Change Palette</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h5>Save & Load</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label for="filePathInput" class="form-label">File Path:</label>
+                            <input type="text" class="form-control" id="filePathInput" placeholder="Enter file path">
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <button class="btn btn-danger" id="saveSceneBtn">Save Scene</button>
+                            <button class="btn btn-warning" id="loadSceneBtn">Load Scene</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5>Segment Control</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label for="segmentSelect" class="form-label">Segment:</label>
+                            <select class="form-select" id="segmentSelect">
+                                <option value="">Select an effect first</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="positionSlider" class="form-label">Position: <span id="positionValue">0</span></label>
+                            <input type="range" class="form-range" min="0" max="224" step="1" id="positionSlider" value="0">
+                        </div>
+                        <div class="mb-3">
+                            <label for="speedSlider" class="form-label">Speed: <span id="speedValue">0</span></label>
+                            <input type="range" class="form-range" min="-50" max="50" step="1" id="speedSlider" value="0">
+                        </div>
+                        <div class="mb-3">
+                            <label for="transparencySlider" class="form-label">Transparency: <span id="transparencyValue">1.0</span></label>
+                            <input type="range" class="form-range" min="0" max="1" step="0.01" id="transparencySlider" value="1.0">
+                        </div>
+                        <div class="mb-3 form-check">
+                            <input type="checkbox" class="form-check-input" id="edgeReflectCheck">
+                            <label class="form-check-label" for="edgeReflectCheck">Edge Reflect</label>
+                        </div>
+                        <button class="btn btn-primary" id="updateSegmentBtn">Update Segment</button>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h5>Custom OSC Command</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label for="oscAddressInput" class="form-label">OSC Address:</label>
+                            <input type="text" class="form-control" id="oscAddressInput"
+                                   placeholder="/scene/1/effect/1/segment/1/move_speed">
+                        </div>
+                        <div class="mb-3">
+                            <label for="oscArgsInput" class="form-label">Arguments (comma separated):</label>
+                            <input type="text" class="form-control" id="oscArgsInput" placeholder="10.0">
+                        </div>
+                        <button class="btn btn-danger" id="sendOscBtn">Send OSC Message</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Cài đặt và biến toàn cục
+        const API_URL = '';
+        let currentState = {
+            scenes: {},
+            current_scene: null,
+            current_effect: null,
+            current_palette: null,
+            segments: {},
+            led_colors: []
+        };
+        let ledCount = 225;
+        let ledZoom = 1;
+
+        // Các phần tử DOM
+        const connectionIndicator = document.getElementById('connectionIndicator');
+        const connectionStatus = document.getElementById('connectionStatus');
+        const ledDisplay = document.getElementById('ledDisplay');
+        const sceneSelect = document.getElementById('sceneSelect');
+        const effectSelect = document.getElementById('effectSelect');
+        const paletteSelect = document.getElementById('paletteSelect');
+        const segmentSelect = document.getElementById('segmentSelect');
+        const positionSlider = document.getElementById('positionSlider');
+        const positionValue = document.getElementById('positionValue');
+        const speedSlider = document.getElementById('speedSlider');
+        const speedValue = document.getElementById('speedValue');
+        const transparencySlider = document.getElementById('transparencySlider');
+        const transparencyValue = document.getElementById('transparencyValue');
+        const edgeReflectCheck = document.getElementById('edgeReflectCheck');
+        const zoomInBtn = document.getElementById('zoomInBtn');
+        const zoomOutBtn = document.getElementById('zoomOutBtn');
+
+        // Nút hành động
+        const changeEffectBtn = document.getElementById('changeEffectBtn');
+        const changePaletteBtn = document.getElementById('changePaletteBtn');
+        const updateSegmentBtn = document.getElementById('updateSegmentBtn');
+        const saveSceneBtn = document.getElementById('saveSceneBtn');
+        const loadSceneBtn = document.getElementById('loadSceneBtn');
+        const sendOscBtn = document.getElementById('sendOscBtn');
+
+        // Fetch trạng thái từ server
+        async function fetchState() {
+            try {
+                const response = await fetch(`${API_URL}/api/state`);
+                const data = await response.json();
+
+                // Cập nhật trạng thái kết nối
+                if (data.is_connected) {
+                    connectionIndicator.classList.remove('disconnected');
+                    connectionIndicator.classList.add('connected');
+                    connectionStatus.textContent = 'Đã kết nối';
+                } else {
+                    connectionIndicator.classList.remove('connected');
+                    connectionIndicator.classList.add('disconnected');
+                    connectionStatus.textContent = 'Mất kết nối';
+                }
+
+                // Cập nhật dữ liệu
+                currentState = data;
+                updateLEDDisplay();
+
+                // Cập nhật UI nếu cần
+                updateUIFromState();
+            } catch (error) {
+                console.error('Error fetching state:', error);
+                connectionIndicator.classList.remove('connected');
+                connectionIndicator.classList.add('disconnected');
+                connectionStatus.textContent = 'Lỗi kết nối';
+            }
+        }
+
+        // Tạo và cập nhật hiển thị LED
+        function updateLEDDisplay() {
+            const colors = currentState.led_colors;
+
+            // Xóa nội dung hiển thị LED hiện tại
+            ledDisplay.innerHTML = '';
+
+            // Tạo các LED mới
+            for (let i = 0; i < colors.length; i++) {
+                const led = document.createElement('div');
+                led.className = 'led';
+
+                const color = colors[i];
+                led.style.backgroundColor = `rgb(${color[0]}, ${color[1]}, ${color[2]})`;
+                led.style.width = `${10 * ledZoom}px`;
+
+                ledDisplay.appendChild(led);
+            }
+        }
+
+        // Cập nhật UI từ trạng thái hiện tại
+        function updateUIFromState() {
+            // Cập nhật dropdown scenes
+            const currentSceneId = currentState.current_scene;
+
+            // Kiểm tra xem có scenes để hiển thị không
+            if (Object.keys(currentState.scenes).length > 0) {
+                // Lưu lại các giá trị đã chọn
+                const selectedSceneId = sceneSelect.value;
+
+                // Xóa tất cả các options hiện tại
+                sceneSelect.innerHTML = '';
+
+                // Thêm các options mới
+                Object.keys(currentState.scenes).forEach(sceneId => {
+                    const option = document.createElement('option');
+                    option.value = sceneId;
+                    option.textContent = `Scene ${sceneId}`;
+                    sceneSelect.appendChild(option);
+                });
+
+                // Khôi phục lại giá trị đã chọn hoặc chọn scene hiện tại
+                if (selectedSceneId && Array.from(sceneSelect.options).some(opt => opt.value === selectedSceneId)) {
+                    sceneSelect.value = selectedSceneId;
+                } else if (currentSceneId) {
+                    sceneSelect.value = currentSceneId;
+                }
+
+                // Đảm bảo effect và palette được load theo scene đã chọn
+                loadEffects(sceneSelect.value);
+                loadPalettes(sceneSelect.value);
+            }
+        }
+
+        // Tải danh sách effects cho scene đã chọn
+        async function loadEffects(sceneId) {
+            try {
+                const response = await fetch(`${API_URL}/api/effects/${sceneId}`);
+                const data = await response.json();
+
+                effectSelect.innerHTML = '';
+                if (data.effects.length === 0) {
+                    const option = document.createElement('option');
+                    option.value = '';
+                    option.textContent = 'No effects available';
+                    effectSelect.appendChild(option);
+                } else {
+                    data.effects.forEach(effectId => {
+                        const option = document.createElement('option');
+                        option.value = effectId;
+                        option.textContent = `Effect ${effectId}`;
+                        effectSelect.appendChild(option);
+                    });
+
+                    if (currentState.current_effect) {
+                        effectSelect.value = currentState.current_effect;
+                        loadSegments(sceneId, currentState.current_effect);
+                    } else {
+                        effectSelect.selectedIndex = 0;
+                        loadSegments(sceneId, effectSelect.value);
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading effects:', error);
+                effectSelect.innerHTML = '<option value="">Error loading effects</option>';
+            }
+        }
+
+        // Tải danh sách palettes cho scene đã chọn
+        async function loadPalettes(sceneId) {
+            try {
+                const response = await fetch(`${API_URL}/api/palettes/${sceneId}`);
+                const data = await response.json();
+
+                paletteSelect.innerHTML = '';
+                if (data.palettes.length === 0) {
+                    const option = document.createElement('option');
+                    option.value = '';
+                    option.textContent = 'No palettes available';
+                    paletteSelect.appendChild(option);
+                } else {
+                    data.palettes.forEach(palette => {
+                        const option = document.createElement('option');
+                        option.value = palette;
+                        option.textContent = `Palette ${palette}`;
+                        paletteSelect.appendChild(option);
+                    });
+
+                    if (currentState.current_palette) {
+                        paletteSelect.value = currentState.current_palette;
+                    } else {
+                        paletteSelect.selectedIndex = 0;
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading palettes:', error);
+                paletteSelect.innerHTML = '<option value="">Error loading palettes</option>';
+            }
+        }
+
+        // Tải danh sách segments cho effect đã chọn
+        async function loadSegments(sceneId, effectId) {
+            try {
+                const response = await fetch(`${API_URL}/api/segments/${sceneId}/${effectId}`);
+                const data = await response.json();
+
+                segmentSelect.innerHTML = '';
+                if (data.segments.length === 0) {
+                    const option = document.createElement('option');
+                    option.value = '';
+                    option.textContent = 'No segments available';
+                    segmentSelect.appendChild(option);
+                } else {
+                    data.segments.forEach(segmentId => {
+                        const option = document.createElement('option');
+                        option.value = segmentId;
+                        option.textContent = `Segment ${segmentId}`;
+                        segmentSelect.appendChild(option);
+                    });
+
+                    segmentSelect.selectedIndex = 0;
+                    loadSegmentParams(sceneId, effectId, segmentSelect.value);
+                }
+            } catch (error) {
+                console.error('Error loading segments:', error);
+                segmentSelect.innerHTML = '<option value="">Error loading segments</option>';
+            }
+        }
+
+        // Tải và hiển thị thông số của segment được chọn
+        function loadSegmentParams(sceneId, effectId, segmentId) {
+            if (!segmentId || !sceneId || !effectId) return;
+
+            if (currentState.segments[sceneId] &&
+                currentState.segments[sceneId][effectId] &&
+                currentState.segments[sceneId][effectId][segmentId]) {
+
+                const segment = currentState.segments[sceneId][effectId][segmentId];
+
+                // Cập nhật thanh trượt vị trí
+                if (segment.current_position !== undefined) {
+                    positionSlider.value = segment.current_position;
+                    positionValue.textContent = segment.current_position;
+                }
+
+                // Cập nhật thanh trượt tốc độ
+                if (segment.move_speed !== undefined) {
+                    speedSlider.value = segment.move_speed;
+                    speedValue.textContent = segment.move_speed;
+                }
+
+                // Cập nhật transparency (sử dụng giá trị đầu tiên nếu là mảng)
+                if (segment.transparency !== undefined) {
+                    const transparencyVal = Array.isArray(segment.transparency) ?
+                                           segment.transparency[0] : segment.transparency;
+                    transparencySlider.value = transparencyVal;
+                    transparencyValue.textContent = transparencyVal;
+                }
+
+                // Cập nhật checkbox phản xạ cạnh
+                if (segment.is_edge_reflect !== undefined) {
+                    edgeReflectCheck.checked = segment.is_edge_reflect;
+                }
+            }
+        }
+
+        // Gửi lệnh OSC
+        async function sendOscCommand(address, args) {
+            try {
+                const response = await fetch(`${API_URL}/api/send_command`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        address: address,
+                        args: args
+                    })
+                });
+
+                const data = await response.json();
+                return data.success;
+            } catch (error) {
+                console.error('Error sending OSC command:', error);
+                return false;
+            }
+        }
+
+        // Sự kiện thay đổi scene
+        sceneSelect.addEventListener('change', () => {
+            const sceneId = sceneSelect.value;
+            if (sceneId) {
+                loadEffects(sceneId);
+                loadPalettes(sceneId);
+            }
+        });
+
+        // Sự kiện thay đổi effect
+        effectSelect.addEventListener('change', () => {
+            const sceneId = sceneSelect.value;
+            const effectId = effectSelect.value;
+            if (sceneId && effectId) {
+                loadSegments(sceneId, effectId);
+            }
+        });
+
+        // Sự kiện thay đổi segment
+        segmentSelect.addEventListener('change', () => {
+            const sceneId = sceneSelect.value;
+            const effectId = effectSelect.value;
+            const segmentId = segmentSelect.value;
+            if (sceneId && effectId && segmentId) {
+                loadSegmentParams(sceneId, effectId, segmentId);
+            }
+        });
+
+        // Sự kiện thay đổi vị trí
+        positionSlider.addEventListener('input', () => {
+            positionValue.textContent = positionSlider.value;
+        });
+
+        // Sự kiện thay đổi tốc độ
+        speedSlider.addEventListener('input', () => {
+            speedValue.textContent = speedSlider.value;
+        });
+
+        // Sự kiện thay đổi transparency
+        transparencySlider.addEventListener('input', () => {
+            transparencyValue.textContent = transparencySlider.value;
+        });
+
+        // Sự kiện zoom in
+        zoomInBtn.addEventListener('click', () => {
+            ledZoom = Math.min(ledZoom * 1.5, 5);
+            updateLEDDisplay();
+        });
+
+        // Sự kiện zoom out
+        zoomOutBtn.addEventListener('click', () => {
+            ledZoom = Math.max(ledZoom / 1.5, 0.5);
+            updateLEDDisplay();
+        });
+
+        // Sự kiện thay đổi effect
+        changeEffectBtn.addEventListener('click', async () => {
+            const sceneId = sceneSelect.value;
+            const effectId = effectSelect.value;
+
+            if (!sceneId || !effectId) {
+                alert('Vui lòng chọn scene và effect');
+                return;
+            }
+
+            const success = await fetch(`${API_URL}/api/change_effect`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    scene_id: parseInt(sceneId),
+                    effect_id: parseInt(effectId)
+                })
+            }).then(res => res.json());
+
+            if (success.success) {
+                alert('Đã thay đổi effect thành công');
+            } else {
+                alert('Lỗi khi thay đổi effect');
+            }
+        });
+
+        // Sự kiện thay đổi palette
+        changePaletteBtn.addEventListener('click', async () => {
+            const sceneId = sceneSelect.value;
+            const effectId = effectSelect.value;
+            const palette = paletteSelect.value;
+
+            if (!sceneId || !palette) {
+                alert('Vui lòng chọn scene và palette');
+                return;
+            }
+
+            const body = {
+                scene_id: parseInt(sceneId),
+                palette: palette
+            };
+
+            if (effectId) {
+                body.effect_id = parseInt(effectId);
+            }
+
+            const success = await fetch(`${API_URL}/api/change_palette`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(body)
+            }).then(res => res.json());
+
+            if (success.success) {
+                alert('Đã thay đổi palette thành công');
+            } else {
+                alert('Lỗi khi thay đổi palette');
+            }
+        });
+
+        // Sự kiện cập nhật segment
+        updateSegmentBtn.addEventListener('click', async () => {
+            const sceneId = sceneSelect.value;
+            const effectId = effectSelect.value;
+            const segmentId = segmentSelect.value;
+
+            if (!sceneId || !effectId || !segmentId) {
+                alert('Vui lòng chọn scene, effect và segment');
+                return;
+            }
+
+            const params = {
+                current_position: parseFloat(positionSlider.value),
+                move_speed: parseFloat(speedSlider.value),
+                transparency: [parseFloat(transparencySlider.value), parseFloat(transparencySlider.value),
+                               parseFloat(transparencySlider.value), parseFloat(transparencySlider.value)],
+                is_edge_reflect: edgeReflectCheck.checked
+            };
+
+            const success = await fetch(`${API_URL}/api/update_segment`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    scene_id: parseInt(sceneId),
+                    effect_id: parseInt(effectId),
+                    segment_id: parseInt(segmentId),
+                    params: params
+                })
+            }).then(res => res.json());
+
+            if (success.success) {
+                alert('Đã cập nhật segment thành công');
+            } else {
+                alert('Lỗi khi cập nhật segment');
+            }
+        });
+
+        // Thêm hàm này vào JavaScript
+        function updateUIFromJSON(jsonData) {
+            // Cập nhật dropdown scenes
+            const sceneId = jsonData.scene_ID;
+
+            // Kiểm tra xem scene đã có trong dropdown chưa
+            let sceneExists = false;
+            for (let i = 0; i < sceneSelect.options.length; i++) {
+                if (sceneSelect.options[i].value == sceneId) {
+                    sceneExists = true;
+                    break;
+                }
+            }
+
+            // Nếu chưa có, thêm vào
+            if (!sceneExists) {
+                const option = document.createElement('option');
+                option.value = sceneId;
+                option.textContent = `Scene ${sceneId}`;
+                sceneSelect.appendChild(option);
+            }
+
+            // Chọn scene vừa tải
+            sceneSelect.value = sceneId;
+
+            // Cập nhật danh sách effects
+            effectSelect.innerHTML = '';
+            if (jsonData.effects) {
+                Object.keys(jsonData.effects).forEach(effectId => {
+                    const option = document.createElement('option');
+                    option.value = effectId;
+                    option.textContent = `Effect ${effectId}`;
+                    effectSelect.appendChild(option);
+                });
+
+                // Chọn effect hiện tại
+                if (jsonData.current_effect_ID) {
+                    effectSelect.value = jsonData.current_effect_ID;
+                }
+            }
+
+            // Cập nhật danh sách palettes
+            paletteSelect.innerHTML = '';
+            if (jsonData.palettes) {
+                Object.keys(jsonData.palettes).forEach(paletteId => {
+                    const option = document.createElement('option');
+                    option.value = paletteId;
+                    option.textContent = `Palette ${paletteId}`;
+                    paletteSelect.appendChild(option);
+                });
+
+                // Chọn palette hiện tại
+                if (jsonData.current_palette) {
+                    paletteSelect.value = jsonData.current_palette;
+                }
+            }
+
+            // Cập nhật segments cho effect được chọn
+            if (effectSelect.value && jsonData.effects && jsonData.effects[effectSelect.value]) {
+                segmentSelect.innerHTML = '';
+                const effect = jsonData.effects[effectSelect.value];
+
+                if (effect.segments) {
+                    Object.keys(effect.segments).forEach(segmentId => {
+                        const option = document.createElement('option');
+                        option.value = segmentId;
+                        option.textContent = `Segment ${segmentId}`;
+                        segmentSelect.appendChild(option);
+                    });
+
+                    // Nếu có segment, chọn segment đầu tiên và cập nhật các control
+                    if (segmentSelect.options.length > 0) {
+                        segmentSelect.selectedIndex = 0;
+                        const selectedSegmentId = segmentSelect.value;
+                        const segment = effect.segments[selectedSegmentId];
+
+                        // Cập nhật controls cho segment
+                        if (segment) {
+                            positionSlider.value = segment.current_position || segment.initial_position || 0;
+                            positionValue.textContent = positionSlider.value;
+
+                            speedSlider.value = segment.move_speed || 0;
+                            speedValue.textContent = speedSlider.value;
+
+                            if (segment.transparency && segment.transparency.length > 0) {
+                                transparencySlider.value = segment.transparency[0];
+                                transparencyValue.textContent = transparencySlider.value;
+                            }
+
+                            edgeReflectCheck.checked = segment.is_edge_reflect || false;
+                        }
+                    }
+                }
+            }
+        }
+
+        // Sự kiện lưu scene
+        saveSceneBtn.addEventListener('click', async () => {
+            const sceneId = sceneSelect.value;
+            const filePath = document.getElementById('filePathInput').value;
+
+            if (!sceneId || !filePath) {
+                alert('Vui lòng chọn scene và nhập đường dẫn file');
+                return;
+            }
+
+            const success = await fetch(`${API_URL}/api/save_scene`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    scene_id: parseInt(sceneId),
+                    file_path: filePath
+                })
+            }).then(res => res.json());
+
+            if (success.success) {
+                alert('Đã lưu scene thành công');
+            } else {
+                alert('Lỗi khi lưu scene');
+            }
+        });
+
+        // Sửa sự kiện tải scene
+        loadSceneBtn.addEventListener('click', async () => {
+            const filePath = document.getElementById('filePathInput').value;
+
+            if (!filePath) {
+                alert('Vui lòng nhập đường dẫn file');
+                return;
+            }
+
+            try {
+                const body = {
+                    file_path: filePath
+                };
+
+                const sceneId = sceneSelect.value;
+                if (sceneId) {
+                    body.scene_id = parseInt(sceneId);
+                }
+
+                // Gửi yêu cầu tải scene
+                const loadResponse = await fetch(`${API_URL}/api/load_scene`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(body)
+                });
+
+                const result = await loadResponse.json();
+
+                if (result.success) {
+                    alert('Đã tải scene thành công');
+
+                    // Sử dụng dữ liệu scene trực tiếp từ phản hồi
+                    if (result.scene_data) {
+                        // Cập nhật UI trực tiếp từ dữ liệu JSON
+                        updateUIFromJSON(result.scene_data);
+                    }
+                } else {
+                    alert('Lỗi khi tải scene: ' + (result.error || 'Unknown error'));
+                }
+            } catch (error) {
+                console.error('Error loading scene:', error);
+                alert('Lỗi khi tải scene: ' + error.message);
+            }
+        });
+
+        // Sự kiện gửi OSC message tùy chỉnh
+        sendOscBtn.addEventListener('click', async () => {
+            const address = document.getElementById('oscAddressInput').value;
+            const argsText = document.getElementById('oscArgsInput').value;
+
+            if (!address) {
+                alert('Vui lòng nhập địa chỉ OSC');
+                return;
+            }
+
+            // Phân tích tham số
+            let args = [];
+            if (argsText) {
+                args = argsText.split(',').map(arg => {
+                    arg = arg.trim();
+
+                    // Kiểm tra số nguyên
+                    if (/^-?\d+$/.test(arg)) {
+                        return parseInt(arg);
+                    }
+
+                    // Kiểm tra số thực
+                    if (/^-?\d+\.\d+$/.test(arg)) {
+                        return parseFloat(arg);
+                    }
+
+                    // Kiểm tra boolean
+                    if (arg.toLowerCase() === 'true') return true;
+                    if (arg.toLowerCase() === 'false') return false;
+
+                    // Xử lý mảng
+                    if (arg.startsWith('[') && arg.endsWith(']')) {
+                        try {
+                            return JSON.parse(arg);
+                        } catch (e) {
+                            return arg;
+                        }
+                    }
+
+                    // Mặc định là chuỗi
+                    return arg;
+                });
+            }
+
+            const success = await sendOscCommand(address, args);
+
+            if (success) {
+                alert('Đã gửi OSC message thành công');
+            } else {
+                alert('Lỗi khi gửi OSC message');
+            }
+        });
+
+        // Khởi chạy ứng dụng
+        function initApp() {
+            // Fetch trạng thái ban đầu
+            fetchState();
+
+            // Thiết lập interval để cập nhật trạng thái định kỳ
+            setInterval(fetchState, 500);
+        }
+
+        // Khởi chạy khi trang đã tải xong
+        document.addEventListener('DOMContentLoaded', initApp);
+    </script>
+</body>
+</html>
