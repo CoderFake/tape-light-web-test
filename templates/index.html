@@ -84,29 +84,6 @@
 
     <div class="container mt-4">
         <div class="row">
-            <div class="col-md-12">
-                <div class="card">
-                    <div class="card-header">
-                        <h5>LED Preview</h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="led-display" id="ledDisplay">
-                            <!-- LEDs sẽ được tạo bởi JavaScript -->
-                        </div>
-                        <div class="d-flex justify-content-between">
-                            <button class="btn btn-dark" id="zoomOutBtn">
-                                <i class="bi bi-zoom-out"></i> Zoom Out
-                            </button>
-                            <button class="btn btn-dark" id="zoomInBtn">
-                                <i class="bi bi-zoom-in"></i> Zoom In
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="row">
             <div class="col-md-6">
                 <div class="card">
                     <div class="card-header">
@@ -226,7 +203,6 @@
         // Các phần tử DOM
         const connectionIndicator = document.getElementById('connectionIndicator');
         const connectionStatus = document.getElementById('connectionStatus');
-        const ledDisplay = document.getElementById('ledDisplay');
         const sceneSelect = document.getElementById('sceneSelect');
         const effectSelect = document.getElementById('effectSelect');
         const paletteSelect = document.getElementById('paletteSelect');
@@ -238,8 +214,6 @@
         const transparencySlider = document.getElementById('transparencySlider');
         const transparencyValue = document.getElementById('transparencyValue');
         const edgeReflectCheck = document.getElementById('edgeReflectCheck');
-        const zoomInBtn = document.getElementById('zoomInBtn');
-        const zoomOutBtn = document.getElementById('zoomOutBtn');
 
         // Nút hành động
         const changeEffectBtn = document.getElementById('changeEffectBtn');
@@ -268,7 +242,6 @@
 
                 // Cập nhật dữ liệu
                 currentState = data;
-                updateLEDDisplay();
 
                 // Cập nhật UI nếu cần
                 updateUIFromState();
@@ -277,26 +250,6 @@
                 connectionIndicator.classList.remove('connected');
                 connectionIndicator.classList.add('disconnected');
                 connectionStatus.textContent = 'Lỗi kết nối';
-            }
-        }
-
-        // Tạo và cập nhật hiển thị LED
-        function updateLEDDisplay() {
-            const colors = currentState.led_colors;
-
-            // Xóa nội dung hiển thị LED hiện tại
-            ledDisplay.innerHTML = '';
-
-            // Tạo các LED mới
-            for (let i = 0; i < colors.length; i++) {
-                const led = document.createElement('div');
-                led.className = 'led';
-
-                const color = colors[i];
-                led.style.backgroundColor = `rgb(${color[0]}, ${color[1]}, ${color[2]})`;
-                led.style.width = `${10 * ledZoom}px`;
-
-                ledDisplay.appendChild(led);
             }
         }
 
@@ -531,17 +484,6 @@
             transparencyValue.textContent = transparencySlider.value;
         });
 
-        // Sự kiện zoom in
-        zoomInBtn.addEventListener('click', () => {
-            ledZoom = Math.min(ledZoom * 1.5, 5);
-            updateLEDDisplay();
-        });
-
-        // Sự kiện zoom out
-        zoomOutBtn.addEventListener('click', () => {
-            ledZoom = Math.max(ledZoom / 1.5, 0.5);
-            updateLEDDisplay();
-        });
 
         // Sự kiện thay đổi effect
         changeEffectBtn.addEventListener('click', async () => {
